@@ -92,7 +92,7 @@ export default function FoodTracker() {
     setEstimating(true);
     setPreview(null);
     try {
-      const data = await api.post('/ai/calories', {
+      const data = await api.post('/ai?action=calories', {
         image: { data: imageData, media_type: imageMediaType },
         description: imageCaption || undefined,
       });
@@ -109,7 +109,7 @@ export default function FoodTracker() {
     setEstimating(true);
     setPreview(null);
     try {
-      setPreview(await api.post('/ai/calories', { description }));
+      setPreview(await api.post('/ai?action=calories', { description }));
     } catch (err) {
       addToast('Could not estimate — try adding manually', 'error');
       setMode('Manual');

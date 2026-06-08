@@ -1,6 +1,8 @@
-import { getDb } from '../_db.js';
-import { requireAuth } from '../_auth.js';
+import { getDb } from './_db.js';
+import { requireAuth } from './_auth.js';
 
+// GET  /api/household   — fetch household + members
+// POST /api/household   — create household
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -12,7 +14,6 @@ export default async function handler(req, res) {
 
   const sql = getDb();
 
-  // GET /api/household — fetch household + members
   if (req.method === 'GET') {
     const [user] = await sql`SELECT household_id FROM users WHERE id = ${auth.id}`;
     if (!user?.household_id) return res.json(null);
@@ -33,11 +34,9 @@ export default async function handler(req, res) {
       WHERE hm.household_id = ${user.household_id}
       ORDER BY hm.joined_at ASC
     `;
-
     return res.json({ ...household, members });
   }
 
-  // POST /api/household — create household
   if (req.method === 'POST') {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'Household name required' });
@@ -45,9 +44,7 @@ export default async function handler(req, res) {
     const [existing] = await sql`SELECT household_id FROM users WHERE id = ${auth.id}`;
     if (existing?.household_id) return res.status(409).json({ error: 'Already in a household' });
 
-    const [household] = await sql`
-      INSERT INTO households (name, created_by) VALUES (${name}, ${auth.id}) RETURNING *
-    `;
+    const [household] = await sql`INSERT INTO households (name, created_by) VALUES (${name}, ${auth.id}) RETURNING *`;
     await sql`INSERT INTO household_members (household_id, user_id, role) VALUES (${household.id}, ${auth.id}, 'owner')`;
     await sql`UPDATE users SET household_id = ${household.id} WHERE id = ${auth.id}`;
 

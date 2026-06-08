@@ -46,7 +46,7 @@ export default function Dashboard() {
       const unread = notifs.filter(n => !n.is_read);
       if (unread.length > 0) {
         unread.forEach(n => addToast(n.message + ' 👏', 'info'));
-        api.patch('/notifications/read').catch(() => {});
+        api.patch('/notifications').catch(() => {});
       }
     }).catch(() => {});
   }, []);

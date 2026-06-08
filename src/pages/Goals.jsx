@@ -106,7 +106,7 @@ export default function Goals() {
           ? Math.min((currentMonthGoal.weight_loss_target > 0 ? 50 : 0), 100)
           : 0;
 
-        const { quote } = await api.post('/ai/quote', { streak: newStreak, monthlyPercent: monthPercent });
+        const { quote } = await api.post('/ai?action=quote', { streak: newStreak, monthlyPercent: monthPercent });
         setMotivationalQuote(quote);
         setShowCelebration(true);
 

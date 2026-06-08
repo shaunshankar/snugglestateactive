@@ -20,7 +20,7 @@ export default function Signup() {
     if (password.length < 6) return addToast('Password must be at least 6 characters', 'error');
     setLoading(true);
     try {
-      const { token, user } = await api.post('/auth/signup', { name, email, password });
+      const { token, user } = await api.post('/auth?action=signup', { name, email, password });
       login(token, user);
       navigate('/');
     } catch (err) {
