@@ -1,5 +1,5 @@
-import { getDb } from './_db.js';
-import { requireAuth } from './_auth.js';
+import { getDb } from '../_db.js';
+import { requireAuth } from '../_auth.js';
 
 // GET  /api/household   — fetch household + members
 // POST /api/household   — create household

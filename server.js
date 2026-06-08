@@ -25,6 +25,6 @@ app.all('/api/household/:seg/:id?',      async (req, res) => {
   req.query.path = req.params.id ? [req.params.seg, req.params.id] : [req.params.seg];
   return (await load(join(__dirname, 'api/household/[...path].js')))(req, res);
 });
-app.all('/api/household',               async (req, res) => (await load(join(__dirname, 'api/household.js')))(req, res));
+app.all('/api/household',               async (req, res) => (await load(join(__dirname, 'api/household/index.js')))(req, res));
 
 app.listen(3001, () => console.log('API server → http://localhost:3001'));
