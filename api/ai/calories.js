@@ -38,11 +38,17 @@ export default async function handler(req, res) {
     content = `Estimate the nutritional content of: ${description}. Return ONLY a JSON object with no markdown, no code blocks, just raw JSON: { "food_name": string, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number }`;
   }
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 512,
-    messages: [{ role: 'user', content }],
-  });
+  let message;
+  try {
+    message = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 512,
+      messages: [{ role: 'user', content }],
+    });
+  } catch (err) {
+    console.error('Anthropic API error:', err?.message || err);
+    return res.status(502).json({ error: `AI service error: ${err?.message || 'Unknown error'}` });
+  }
 
   const text = message.content[0].text.trim();
   try {

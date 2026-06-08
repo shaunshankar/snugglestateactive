@@ -15,14 +15,20 @@ export default async function handler(req, res) {
 
   const { streak, monthlyPercent } = req.body;
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 150,
-    messages: [{
-      role: 'user',
-      content: `Generate a short, warm, motivational quote (max 2 sentences) for someone who has hit their health goals for ${streak || 1} consecutive days and is ${monthlyPercent || 0}% toward their monthly weight loss target. Return ONLY the quote text, no quotation marks, no attribution.`,
-    }],
-  });
+  let message;
+  try {
+    message = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 150,
+      messages: [{
+        role: 'user',
+        content: `Generate a short, warm, motivational quote (max 2 sentences) for someone who has hit their health goals for ${streak || 1} consecutive days and is ${monthlyPercent || 0}% toward their monthly weight loss target. Return ONLY the quote text, no quotation marks, no attribution.`,
+      }],
+    });
+  } catch (err) {
+    console.error('Anthropic API error:', err?.message || err);
+    return res.status(502).json({ error: `AI service error: ${err?.message || 'Unknown error'}` });
+  }
 
   return res.json({ quote: message.content[0].text.trim() });
 }
