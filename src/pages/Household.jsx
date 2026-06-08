@@ -57,7 +57,7 @@ export default function Household() {
     if (!inviteCode.trim()) return addToast('Enter invite code', 'error');
     setJoining(true);
     try {
-      await api.post('/household/join', { invite_code: inviteCode.trim() });
+      await api.post('/household?action=join', { invite_code: inviteCode.trim() });
       await loadHousehold();
       addToast('Joined household!');
     } catch (err) {
@@ -70,7 +70,7 @@ export default function Household() {
   async function leaveHousehold() {
     if (!confirm('Leave this household?')) return;
     try {
-      await api.delete('/household/leave');
+      await api.delete('/household?action=leave');
       setHousehold(null);
       updateUser({ household_id: null });
       addToast('Left household');
@@ -88,7 +88,7 @@ export default function Household() {
     setProfileLoading(true);
     setTab('profile');
     try {
-      const data = await api.get(`/household/member/${memberId}`);
+      const data = await api.get(`/household?action=member&id=${memberId}`);
       setMemberProfile(data);
     } catch (err) {
       addToast(err.message, 'error');
@@ -100,7 +100,7 @@ export default function Household() {
 
   async function sendCheer(memberId) {
     try {
-      await api.post(`/household/cheer/${memberId}`, {});
+      await api.post(`/household?action=cheer&id=${memberId}`, {});
       addToast('Cheer sent! 👏');
     } catch (err) {
       addToast(err.message, 'error');

@@ -16,6 +16,10 @@ async function request(path, options = {}) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }));
     throw new Error(err.error || 'Request failed');
   }
+  const ct = res.headers.get('content-type') || '';
+  if (!ct.includes('application/json')) {
+    throw new Error(`API route not found: ${path.split('?')[0]}`);
+  }
   return res.json();
 }
 
