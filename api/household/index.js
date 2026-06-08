@@ -67,12 +67,13 @@ export default async function handler(req, res) {
     const today = new Date().toISOString().split('T')[0];
     const [user] = await sql`SELECT id, name, email, weight_target FROM users WHERE id = ${id}`;
     const weights = await sql`SELECT weight, unit, date FROM weight_entries WHERE user_id = ${id} ORDER BY date ASC`;
+    const myWeights = await sql`SELECT weight, unit, date FROM weight_entries WHERE user_id = ${auth.id} ORDER BY date ASC`;
     const [todayFood] = await sql`SELECT COALESCE(SUM(calories), 0) as total_calories FROM food_entries WHERE user_id = ${id} AND date = ${today}`;
     const [todayWater] = await sql`SELECT COALESCE(SUM(amount), 0) as total_water FROM water_entries WHERE user_id = ${id} AND date = ${today}`;
     const [streak] = await sql`SELECT COALESCE(MAX(streak_count), 0) as streak FROM daily_goals WHERE user_id = ${id} AND goals_met = true`;
     const monthlyGoals = await sql`SELECT * FROM monthly_goals WHERE user_id = ${id} ORDER BY month DESC LIMIT 3`;
 
-    return res.json({ user, weights, todayFood, todayWater, streak, monthlyGoals });
+    return res.json({ user, weights, myWeights, todayFood, todayWater, streak, monthlyGoals });
   }
 
   // --- cheer ---

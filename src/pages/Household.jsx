@@ -216,6 +216,7 @@ export default function Household() {
               profile={memberProfile}
               onCheer={() => sendCheer(viewingMember)}
               weightUnit={user?.unit || 'kg'}
+              myName={user?.name}
             />
           ) : null}
         </>
@@ -287,8 +288,8 @@ export default function Household() {
   );
 }
 
-function MemberProfile({ profile, onCheer, weightUnit }) {
-  const { user, weights, todayFood, todayWater, streak, monthlyGoals } = profile;
+function MemberProfile({ profile, onCheer, weightUnit, myName }) {
+  const { user, weights, myWeights, todayFood, todayWater, streak, monthlyGoals } = profile;
 
   const sortedWeights = [...(weights || [])];
   const currentWeight = sortedWeights.length > 0 ? parseFloat(sortedWeights[sortedWeights.length - 1].weight) : null;
@@ -296,10 +297,16 @@ function MemberProfile({ profile, onCheer, weightUnit }) {
   const targetWeight = user.weight_target ? parseFloat(user.weight_target) : null;
   const toGo = currentWeight && targetWeight ? (currentWeight - targetWeight).toFixed(1) : null;
 
-  const chartData = sortedWeights.slice(-20).map(w => ({
-    date: formatDate(w.date),
-    weight: parseFloat(w.weight),
+  // Build comparison chart — union of both users' dates over last 60 days
+  const theirMap = Object.fromEntries(sortedWeights.map(w => [w.date, parseFloat(w.weight)]));
+  const myMap = Object.fromEntries((myWeights || []).map(w => [w.date, parseFloat(w.weight)]));
+  const allDates = [...new Set([...Object.keys(theirMap), ...Object.keys(myMap)])].sort().slice(-60);
+  const chartData = allDates.map(date => ({
+    date: formatDate(date),
+    [user.name]: theirMap[date] ?? null,
+    [myName || 'Me']: myMap[date] ?? null,
   }));
+  const hasChart = chartData.length > 1 && (Object.keys(theirMap).length > 1 || Object.keys(myMap).length > 1);
 
   return (
     <div className="space-y-4">
@@ -358,16 +365,28 @@ function MemberProfile({ profile, onCheer, weightUnit }) {
         </div>
       </div>
 
-      {/* Weight chart */}
-      {chartData.length > 1 && (
+      {/* Comparison chart */}
+      {hasChart && (
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Weight Trend</p>
-          <ResponsiveContainer width="100%" height={140}>
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Weight Progress</p>
+          {/* Legend */}
+          <div className="flex gap-4 mb-3">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <span className="text-xs text-gray-600">{user.name}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-blue-400" />
+              <span className="text-xs text-gray-600">{myName || 'Me'}</span>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={160}>
             <LineChart data={chartData}>
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#9ca3af' }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
               <YAxis domain={['auto', 'auto']} tick={{ fontSize: 9, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
               <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: 11 }} />
-              <Line type="monotone" dataKey="weight" stroke="#22c55e" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey={user.name} stroke="#22c55e" strokeWidth={2} dot={false} connectNulls />
+              <Line type="monotone" dataKey={myName || 'Me'} stroke="#60a5fa" strokeWidth={2} dot={false} connectNulls />
             </LineChart>
           </ResponsiveContainer>
         </div>
