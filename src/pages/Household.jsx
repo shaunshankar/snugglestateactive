@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
-import { initials, formatWeight } from '../lib/utils';
+import { initials, formatWeight, formatDate, formatMonth } from '../lib/utils';
 import ProgressRing from '../components/ProgressRing';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { formatDate } from '../lib/utils';
 
 export default function Household() {
   const { user, updateUser } = useAuth();
@@ -291,15 +290,20 @@ export default function Household() {
 function MemberProfile({ profile, onCheer, weightUnit }) {
   const { user, weights, todayFood, todayWater, streak, monthlyGoals } = profile;
 
-  const chartData = [...(weights || [])].slice(-20).map(w => ({
+  const sortedWeights = [...(weights || [])];
+  const currentWeight = sortedWeights.length > 0 ? parseFloat(sortedWeights[sortedWeights.length - 1].weight) : null;
+  const currentUnit = sortedWeights.length > 0 ? sortedWeights[sortedWeights.length - 1].unit : weightUnit;
+  const targetWeight = user.weight_target ? parseFloat(user.weight_target) : null;
+  const toGo = currentWeight && targetWeight ? (currentWeight - targetWeight).toFixed(1) : null;
+
+  const chartData = sortedWeights.slice(-20).map(w => ({
     date: formatDate(w.date),
     weight: parseFloat(w.weight),
   }));
 
-  const latestGoal = monthlyGoals?.[0];
-
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-14 h-14 rounded-2xl bg-green-100 text-green-700 font-bold font-heading flex items-center justify-center text-lg">
@@ -317,7 +321,32 @@ function MemberProfile({ profile, onCheer, weightUnit }) {
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        {/* Weight stats */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="bg-gray-50 rounded-xl p-3 text-center">
+            <p className="font-bold text-gray-900 text-lg">
+              {currentWeight ? `${currentWeight.toFixed(1)} ${currentUnit}` : '—'}
+            </p>
+            <p className="text-xs text-gray-500">Current weight</p>
+          </div>
+          <div className={`rounded-xl p-3 text-center ${targetWeight ? 'bg-green-50' : 'bg-gray-50'}`}>
+            <p className={`font-bold text-lg ${targetWeight ? 'text-green-700' : 'text-gray-400'}`}>
+              {targetWeight ? `${targetWeight.toFixed(1)} ${currentUnit}` : '—'}
+            </p>
+            <p className="text-xs text-gray-500">Target weight</p>
+          </div>
+        </div>
+        {toGo !== null && parseFloat(toGo) > 0 && (
+          <p className="text-xs text-center text-gray-500">
+            {toGo} {currentUnit} to go
+          </p>
+        )}
+        {toGo !== null && parseFloat(toGo) <= 0 && (
+          <p className="text-xs text-center text-green-600 font-medium">🎉 Target reached!</p>
+        )}
+
+        {/* Today's intake */}
+        <div className="grid grid-cols-2 gap-3 mt-3">
           <div className="bg-gray-50 rounded-xl p-3 text-center">
             <p className="font-bold text-gray-900">{Math.round(todayFood?.total_calories || 0)}</p>
             <p className="text-xs text-gray-500">kcal today</p>
@@ -329,6 +358,7 @@ function MemberProfile({ profile, onCheer, weightUnit }) {
         </div>
       </div>
 
+      {/* Weight chart */}
       {chartData.length > 1 && (
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Weight Trend</p>
@@ -343,16 +373,28 @@ function MemberProfile({ profile, onCheer, weightUnit }) {
         </div>
       )}
 
-      {latestGoal && (
+      {/* Monthly goals */}
+      {monthlyGoals?.length > 0 && (
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Monthly Goal</p>
-          <p className="text-sm text-gray-900 font-medium">
-            Lose {latestGoal.weight_loss_target} {weightUnit}
-            {latestGoal.achieved && ' ✅'}
-          </p>
-          {latestGoal.reward_amount && (
-            <p className="text-xs text-gray-500 mt-0.5">Reward: ${latestGoal.reward_amount} AUD</p>
-          )}
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Monthly Goals</p>
+          <div className="space-y-3">
+            {monthlyGoals.map(goal => (
+              <div key={goal.id} className={`rounded-xl p-3 ${goal.achieved ? 'bg-green-50 border border-green-100' : 'bg-gray-50'}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {formatMonth(goal.month)}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Lose {goal.weight_loss_target} {weightUnit}
+                      {goal.reward_amount ? ` · $${goal.reward_amount} reward` : ''}
+                    </p>
+                  </div>
+                  <span className="text-xl">{goal.achieved ? '✅' : '🎯'}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

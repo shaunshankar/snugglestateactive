@@ -65,7 +65,7 @@ export default async function handler(req, res) {
     }
 
     const today = new Date().toISOString().split('T')[0];
-    const [user] = await sql`SELECT id, name, email FROM users WHERE id = ${id}`;
+    const [user] = await sql`SELECT id, name, email, weight_target FROM users WHERE id = ${id}`;
     const weights = await sql`SELECT weight, unit, date FROM weight_entries WHERE user_id = ${id} ORDER BY date ASC`;
     const [todayFood] = await sql`SELECT COALESCE(SUM(calories), 0) as total_calories FROM food_entries WHERE user_id = ${id} AND date = ${today}`;
     const [todayWater] = await sql`SELECT COALESCE(SUM(amount), 0) as total_water FROM water_entries WHERE user_id = ${id} AND date = ${today}`;
